@@ -26,7 +26,11 @@ pip install -r requirements.txt
 alembic upgrade head
 fastapi dev main.py --port 8000
 ```
-*Note: `fastapi dev` requires installing FastAPI with standard extras (`pip install "fastapi[standard]"`). This project’s `requirements.txt` already includes that extra. If you prefer using Uvicorn directly, you can still run: `uvicorn main:app --reload --port 8000`.*
+
+*Note: `fastapi dev` requires installing FastAPI with standard extras (`pip install "fastapi[standard]"`). This
+project’s `requirements.txt` already includes that extra. If you prefer using Uvicorn directly, you can still
+run: `uvicorn main:app --reload --port 8000`.*
+
 ```
 
 3) (Optional) Pull Ollama models:
@@ -61,9 +65,11 @@ yarn dev
 - First run creates pgvector extension + tsvector column for BM25-ish scoring.
 - This is a minimal scaffold; extend models and React UI per roadmap.
 
-
-Got it — you want a **system design** for a **smart study assistant + note-taking application** that uses **GPT-OSS** (open-source GPT-style models) for **local development**.
-We’ll build this in a way that supports **offline/LLM-powered features**, integrates **structured notes**, and enables **smart study capabilities** like summarization, Q\&A, flashcard generation, and schedule creation — all without requiring a proprietary API like OpenAI’s.
+Got it — you want a **system design** for a **smart study assistant + note-taking application** that uses **GPT-OSS** (
+open-source GPT-style models) for **local development**.
+We’ll build this in a way that supports **offline/LLM-powered features**, integrates **structured notes**, and enables *
+*smart study capabilities** like summarization, Q\&A, flashcard generation, and schedule creation — all without
+requiring a proprietary API like OpenAI’s.
 
 ---
 
@@ -227,7 +233,7 @@ We’ll build this in a way that supports **offline/LLM-powered features**, inte
 ## **4. Example Local Development Stack**
 
 | Layer           | Tech                         |
-| --------------- | ---------------------------- |
+|-----------------|------------------------------|
 | Frontend        | React + Vite + TypeScript    |
 | Backend         | FastAPI + Uvicorn            |
 | LLM             | Ollama / GPT4All / LM Studio |
@@ -264,12 +270,13 @@ We’ll build this in a way that supports **offline/LLM-powered features**, inte
    ```
 4. **Load Notes**:
 
-   * Upload PDF/DOCX.
-   * Process + embed.
+* Upload PDF/DOCX.
+* Process + embed.
+
 5. **Ask Questions**:
 
-   * Query runs through RAG pipeline.
-   * GPT-OSS answers using local embeddings.
+* Query runs through RAG pipeline.
+* GPT-OSS answers using local embeddings.
 
 ---
 
@@ -333,10 +340,181 @@ services:
 
 ---
 
-If you like, I can now **draw a detailed architecture diagram** showing **frontend-backend-LLM-RAG connections**, plus **data flow** for:
+If you like, I can now **draw a detailed architecture diagram** showing **frontend-backend-LLM-RAG connections**, plus *
+*data flow** for:
 
 * Note creation.
 * File import.
 * Question answering.
 
 That way you’ll have both **logical** and **physical** views of the system.
+
+# Cortex Synapse
+
+> **Where code, notes, and insight connect.**
+
+**Cortex Synapse** is a local-first IDE and study environment that blends Monaco editing, notebooks, and an AI copilot.
+It ingests your documents, builds embeddings in Postgres + pgvector, and serves grounded answers—without leaving your
+editor.
+
+## Packages
+
+- **Cortex Synapse Studio** — Desktop app (Tauri + React): `app-web/` (or `apps/studio/` in future layout)
+- **Cortex Synapse API** — FastAPI backend: `app-api/`
+- **Cortex Synapse Engine** — Workers (Celery + Redis): `services/engine/` (new path introduced by this PR)
+- **Cortex Synapse Infra** — Docker Compose: `infra/`
+
+## Quickstart
+
+```bash
+# Infra
+cd infra && docker compose up -d
+
+# API
+cd app-api
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+alembic upgrade head
+uvicorn app.main:app --reload
+
+# Engine (Celery)
+# in another terminal from app-api or services/engine (if later split)
+celery -A app.celery_app.celery_app worker --loglevel=INFO
+
+# Studio
+cd app-web
+yarn && yarn tauri dev
+```
+
+## Configuration
+
+- Env prefix guidance: `CS_` (additive, non-breaking). See component READMEs.
+- Default LLM: **Ollama** (`llama3:8b-instruct`, `nomic-embed-text`)
+- Optional: OpenAI-compatible endpoints (aka "gpt-oss")
+
+## Brand Architecture
+
+- **Master brand:** **Cortex Synapse**
+  - **Cortex Synapse Studio** (desktop IDE)
+  - **Cortex Synapse API** (backend)
+  - **Cortex Synapse Engine** (workers/RAG)
+  - **Cortex Synapse Infra** (compose, provisioning)
+
+## License
+
+MIT (placeholder)
+
+---
+
+© 2025 Cortex Synapse contributors.
+
+# Cortex Synapse Engine
+
+Celery workers for document ingestion, chunking, embeddings, and indexing.
+
+## Run
+
+```bash
+# from app-api/ (if the Celery app lives there)
+celery -A app.celery_app.celery_app worker --loglevel=INFO -Q default -n engine@%h
+```
+
+## Tasks
+
+- `ingest_document_task(doc_id)` — extract, chunk, embed, upsert
+
+## Notes
+
+- Default embeddings via Ollama (`nomic-embed-text`, dim=768)
+- Switch to OpenAI‑compatible by setting EMBED vars
+
+# Cortex Synapse
+
+> **Where code, notes, and insight connect.**
+
+**Cortex Synapse** is a local-first IDE and study environment that blends Monaco editing, notebooks, and an AI copilot.
+It ingests your documents, builds embeddings in Postgres + pgvector, and serves grounded answers—without leaving your
+editor.
+
+## Packages
+
+- **Cortex Synapse Studio** — Desktop app (Tauri + React): `app-web/` (or `apps/studio/` in future layout)
+- **Cortex Synapse API** — FastAPI backend: `app-api/`
+- **Cortex Synapse Engine** — Workers (Celery + Redis): `services/engine/` (new path introduced by this PR)
+- **Cortex Synapse Infra** — Docker Compose: `infra/`
+
+## Quickstart
+
+```bash
+# Infra
+cd infra && docker compose up -d
+
+# API
+cd app-api
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+alembic upgrade head
+uvicorn app.main:app --reload
+
+# Engine (Celery)
+# in another terminal from app-api or services/engine (if later split)
+celery -A app.celery_app.celery_app worker --loglevel=INFO
+
+# Studio
+cd app-web
+yarn && yarn tauri dev
+```
+
+## Configuration
+
+- Env prefix guidance: `CS_` (additive, non-breaking). See component READMEs.
+- Default LLM: **Ollama** (`llama3:8b-instruct`, `nomic-embed-text`)
+- Optional: OpenAI-compatible endpoints (aka "gpt-oss")
+
+## Brand Architecture
+
+- **Master brand:** **Cortex Synapse**
+  - **Cortex Synapse Studio** (desktop IDE)
+  - **Cortex Synapse API** (backend)
+  - **Cortex Synapse Engine** (workers/RAG)
+  - **Cortex Synapse Infra** (compose, provisioning)
+
+## License
+
+MIT (placeholder)
+
+---
+
+© 2025 Cortex Synapse contributors.
+
+# Cortex Synapse Studio
+
+Desktop IDE where code, notes, and AI study tools meet.
+
+## Stack
+
+- Tauri 2, React 18, Vite
+- Monaco Editor
+- TailwindCSS
+- State: Zustand
+- Data: TanStack Query
+
+## Scripts
+
+```bash
+yarn dev        # vite dev server
+yarn tauri dev  # desktop dev
+yarn build      # build web assets
+yarn tauri build
+```
+
+## Config
+
+- `CS_API_URL` (default `http://127.0.0.1:8000`)
+- `CS_OLLAMA_URL` (default `http://localhost:11434`)
+
+## Pages
+
+- Snippets, Documents (upload), RAG (chat), Settings
