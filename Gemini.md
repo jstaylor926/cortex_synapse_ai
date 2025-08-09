@@ -1,66 +1,98 @@
-# Dev Assistant (Local-first Study/IDE/Assistant)
+You are an expert software developer assisting with the Cortex Synapse AI project.
 
-Local-first desktop-friendly app with:
+**Project Overview:**
 
-- **FastAPI** backend
-- **Postgres + pgvector** for hybrid search and RAG
-- **Ollama** for local LLM + embeddings
-- **React (Vite) + Monaco** for notebooks and snippets
+The project is a local-first Dev Assistant that combines a notebook/IDE with a personal knowledge base and an AI assistant. It uses a FastAPI backend, a React frontend, and a PostgreSQL database with pgvector for RAG.
 
-## Quick start
+**Key Technologies:**
 
-1) Bring up infra (Postgres + Ollama):
+* **Backend**: FastAPI, SQLAlchemy, Alembic, Pydantic
+* **Frontend**: React, TypeScript, Vite, Monaco Editor
+* **Database**: PostgreSQL with pgvector for vector search
+* **AI/ML**: Ollama for local LLMs, sentence-transformers for embeddings
 
-```bash
-cd infra
-cp .env.example .env
-docker compose up -d
-```
+**File Structure:**
 
-2) Install Python deps and run migrations:
+* `api/`: FastAPI backend code
+    * `main.py`: API endpoints
+    * `models.py`: SQLAlchemy models
+    * `db.py`: Database session management
+    * `llm/`: LLM provider implementations
+* `web/`: React frontend code
+    * `src/main.tsx`: Main application entry point
+    * `src/App.tsx`: Root App component
+* `infra/`: Docker compose for Postgres and Ollama
+* `db_migrations/`: Alembic database migrations
 
-```bash
-cd ../app-api
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-alembic upgrade head
-fastapi dev main.py --port 8000
-```
-*Note: `fastapi dev` requires installing FastAPI with standard extras (`pip install "fastapi[standard]"`). This project’s `requirements.txt` already includes that extra. If you prefer using Uvicorn directly, you can still run: `uvicorn main:app --reload --port 8000`.*
-```
+When providing code examples, please adhere to the existing coding style and best practices found in the project. For Python, follow PEP 8. For TypeScript/React, use functional components with hooks.
 
-3) (Optional) Pull Ollama models:
 
-```bash
-curl -s http://localhost:11434/api/pull -d '{"model":"llama3"}'
-curl -s http://localhost:11434/api/pull -d '{"model":"nomic-embed-text"}'
-```
+# MVP (4–6 weeks)
 
-4) Start web app (using yarn):
+**Must-haves**
 
-```bash
-cd ../app-web
-yarn install
-yarn dev
-```
+* Monaco editor + notebooks (markdown + Python cells; TS cells optional)
+* Snippets library (CRUD, tags, quick-insert, copy)
+* Import PDFs/DOCX → chunk → embed
+* Hybrid search (keyword + vector)
+* RAG Q\&A panel with **citations to your sources**
+* Local LLM via Ollama (configurable), offline-by-default
+* Basic actions: RunCell, CaptureSnippet, IndexDocument, AskRag
+* Minimal Tasks (todo/doing/done), linked anywhere
+* Export (markdown/json) and simple backup
 
-## Env
+**Quality-of-life**
 
-- **API** reads `.env` (or env vars) for DB and LLM settings.
-- **DB** connection defaults to `postgresql+psycopg://dev:dev@localhost:5432/dev_assistant`
+* Global hotkey “Capture Snippet”
+* Per-notebook virtualenv (Python) and cached outputs
+* Settings page (model selection, privacy toggles)
 
-## Endpoints (subset)
+# v1 (productization)
 
-- `GET /health`
-- `POST /import` (stub) – accept text and index
-- `POST /search/hybrid` – BM25 (tsvector) + vector cosine
-- `POST /rag/answer` – retrieve top chunks and ask LLM with citations
+* **Refactor actions** (propose diffs), **test generation**, docstring tools
+* **Flashcards + spaced repetition** (“Study Today” view)
+* **Pack publishing** (versioned bundles you can share)
+* **Sync** (optional) via encrypted store (S3/minio/Tailscale)—user holds keys
+* **Auth** (local single-user → passkey for cloud)
+* **Telemetry (opt-in, local-first)** success/failure metrics only
+* **Plugin API** (register new Actions & Tools with minimal boilerplate)
 
-## Notes
+# Data & Retrieval Plan
 
-- First run creates pgvector extension + tsvector column for BM25-ish scoring.
-- This is a minimal scaffold; extend models and React UI per roadmap.
+* **Chunk sizes** \~800 tokens, 100 overlap; code chunks include language, path, and title for weighting
+* **Hybrid retrieval**: BM25 (SQL/SQLite FTS) + vector cosine; score fusion
+* **Rerank (optional)**: cross-encoder for top 50 → top 10
+* **Citations**: source title + chunk index; click to open exact section
 
+# Security & Privacy (from day one)
+
+* Local-by-default; **no network calls unless explicitly enabled**
+* Configurable **denylist** of outbound domains; key vault in OS keychain
+* Content hashing for duplicate detection
+* For SaaS later: row-level security, per-tenant keys, encrypted at rest
+
+# Packaging & Distribution
+
+* **Tauri app** for macOS/Win/Linux
+* Auto-update channel (optional), offline installers
+* CLI: `dev-assistant export --all` (tar of DB dump + markdown + attachments)
+
+# Monetization & Open-Source Strategy
+
+* **Core OSS** (local app, basic RAG, notes/snippets)
+* **Pro** (one-time or subscription): refactor/test-gen, advanced search, packs marketplace, multi-device sync
+* **Team plan**: shared spaces, role gates, review workflows
+* License: permissive for core; commercial add-ons under separate EULA
+
+# Multi-Tenant SaaS Path (when ready)
+
+* Keep FastAPI; add **Postgres RLS** (tenant\_id), or schema-per-tenant
+* Object storage for attachments (S3-compatible) + CDN
+* Background workers (Redis) + task queue
+* Observability (OpenTelemetry) and rate limiting
+
+
+Ensure you use modern technologies and focus on local development and implementation.
 
 Got it — you want a **system design** for a **smart study assistant + note-taking application** that uses **GPT-OSS** (open-source GPT-style models) for **local development**.
 We’ll build this in a way that supports **offline/LLM-powered features**, integrates **structured notes**, and enables **smart study capabilities** like summarization, Q\&A, flashcard generation, and schedule creation — all without requiring a proprietary API like OpenAI’s.
